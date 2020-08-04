@@ -8,7 +8,8 @@ import IHashProvider from '../providers/HashProvider/models/IHashProvider';
 
 interface IRequest {
     token: string;
-    password: string,
+    password: string;
+    password_confirmation: string;
 }
 
 @injectable()
@@ -25,7 +26,7 @@ class ResetPasswordService {
         private hashProvider: IHashProvider,
     ){}
 
-    public async execute({ token, password }: IRequest): Promise<void> {
+    public async execute({ token, password, password_confirmation}: IRequest): Promise<void> {
         const userToken = await this.userTokensRepository.findByToken(token);
 
         if(!userToken) {
@@ -40,8 +41,6 @@ class ResetPasswordService {
 
         const tokenCreateAt = userToken.create_at;
         const compareDate = addHours(tokenCreateAt, 2);
-
-        console.log(compareDate);
 
         if(isAfter(Date.now(), compareDate)) {
             throw new AppError('Token expired');

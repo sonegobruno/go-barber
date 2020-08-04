@@ -3,6 +3,7 @@ import { celebrate, Segments, Joi } from 'celebrate';
 
 import UsersController from '../controllers/UsersController';
 import UserAvatarController from '../controllers/UserAvatarController';
+import ensuredAuthenticated from '@modules/users/infra/http/middlewares/ensureAuthenticated';
 
 const usersRouter = Router();
 const usersController = new UsersController();
@@ -16,6 +17,6 @@ usersRouter.post('/', celebrate({
     }
 }), usersController.create);
 
-usersRouter.patch('/avatar', userAvatarController.update);
+usersRouter.patch('/avatar',ensuredAuthenticated,userAvatarController.update);
 
 export default usersRouter;
