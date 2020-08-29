@@ -2,21 +2,29 @@ import React, { createContext, useEffect, useCallback, useState, useContext } fr
 import AsyncStorage from '@react-native-community/async-storage';
 import api from '../services/api';
 
+interface IUser {
+    id: string;
+    name: string;
+    email: string;
+    avatar_url: string;
+}
+
 interface SignInCredentials {
     email: string;
     password: string;
 }
 
 interface AuthContextState {
-    user: object;
+    user: IUser;
     signIn(credentials: SignInCredentials): Promise<void>;
     signOut(): void;
+    updateUser(user: IUser): Promise<void>; 
     loading: boolean;
 }
 
 interface AuthState {
     token: string;
-    user: object;
+    user: IUser;
 }
 
 const AuthContext = createContext<AuthContextState>({} as AuthContextState);
@@ -37,6 +45,9 @@ export const AuthProvider: React.FC = ({children}) => {
             ['@GoBarber:token', token],
             ['@GoBarber:user', JSON.stringify(user)]
         ])
+
+        api.defaults.headers.authorization = `Bearer ${token}`;
+
         setData({ token, user });
     },[]);
 
@@ -45,7 +56,15 @@ export const AuthProvider: React.FC = ({children}) => {
     
         setData({} as AuthState);
     },[])
-    
+ 
+    const updateUser = useCallback(async (user: IUser) => {
+        await AsyncStorage.setItem('@GoBarber:user', JSON.stringify(user));
+        setData({
+            token: data.token,
+            user
+        });
+    },[data.token])
+
     useEffect(()=>{
         async function loadStorage(): Promise<void> {
             const [ token, user ] = await AsyncStorage.multiGet([
@@ -53,6 +72,7 @@ export const AuthProvider: React.FC = ({children}) => {
             ])
 
             if( token[1] && user[1]) {
+                api.defaults.headers.authorization = `Bearer ${token[1]}`;
                 setData({token: token[1], user: JSON.parse(user[1])});
             }
 
@@ -63,7 +83,7 @@ export const AuthProvider: React.FC = ({children}) => {
     },[]);
 
     return (
-        <AuthContext.Provider value={{user: data.user, signIn, signOut, loading}}>
+        <AuthContext.Provider value={{user: data.user, signIn, signOut, loading, updateUser}}>
             {children}
         </AuthContext.Provider>
     );
